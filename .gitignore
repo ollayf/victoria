@@ -1,1 +1,4 @@
 .venv
+models_master/
+*__pycache__*
+*/test*
