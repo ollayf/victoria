@@ -5,7 +5,8 @@ import time
 i = 0
 start = time.time()
 
-cap = cv2.VideoCapture("rtsp://{user}:{pw}@{ip}:{port}".format(user, pw, ip, port))
+# cap = cv2.VideoCapture("rtsp://{user}:{pw}@{ip}:{port}".format(user, pw, ip, port))
+cap = cv2.VideoCapture(0)
 print('Initiated connection')
 while True:
     ret, frame = cap.read()
