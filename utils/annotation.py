@@ -49,7 +49,6 @@ def annotate_bbox(im_array, json, min_score: int=0.25, desired_classes:list = [1
     
     # ELSE draw the box
     bbox = json['bbox']
-    print(bbox)
     x1, y1, w, h = list(map(lambda x: int(x), bbox))
     x2 = x1 + w
     y2 = y1 + h

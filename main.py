@@ -38,7 +38,8 @@ from utils import annotation, mutils
 #     progress=True
 # )
 
-VIDEO = '/home/hosea/Infinergy/videos/sieved/busy/busy.mp4'
+HARDEST_VIDEO = '/home/hosea/Infinergy/videos/sieved/busy/busy.mp4'
+VIDEO = '/home/hosea/Infinergy/videos/sieved/09.12.13-09.12.41[M][0@0][0].mp4'
 
 downloaded_ckpt = 'models/pifpaf/shufflenetv2k16-210404-110105-cocokp-o10s-f90ed364.pkl'
 model, processor = mutils.get_model(downloaded_ckpt)

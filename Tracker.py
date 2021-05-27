@@ -1,5 +1,7 @@
+from utils.sounds import usual
 from scipy import stats
 import numpy as np
+import utils
 
 class ModeCounter:
 
@@ -25,5 +27,5 @@ class ModeCounter:
             else:
                 print("Mode person removed")
             self.last_mode = new_mode
-            input("WAiting")
+            usual()
         return new_mode
