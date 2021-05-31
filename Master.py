@@ -1,11 +1,13 @@
-from Tracker import ModeCounter
-from Stream import ProcessedStream
-from openpifpaf import transforms
 import torch
 import cv2
 import time
 from scipy import stats
 import numpy as np
+import getpass
+
+from Tracker import ModeCounter
+from Stream import ProcessedStream
+from openpifpaf import transforms
 
 class Master:
 
@@ -23,6 +25,10 @@ class Master:
         self.tracker = tracker(self)
 
     def _prepare_stream(self, stream):
+        '''
+        Allows taking in direct instance of ProcessedStream
+        Allows rtsp
+        '''
         if not stream:
             return ProcessedStream(0, preprocess=self.preprocess)
         if isinstance(stream, ProcessedStream):

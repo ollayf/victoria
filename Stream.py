@@ -5,6 +5,7 @@ Cannibalised Stream class from openpifpaf library
 import argparse
 import logging
 import time
+import getpass
 
 import numpy as np
 import torch
@@ -64,18 +65,58 @@ class ProcessedStream(torch.utils.data.IterableDataset):
         self.preprocess = preprocess
         self.with_raw_image = with_raw_image
         
+        self.cap = self._initialiseVideoCap(source)
         self.fps = self.get_fps()
         self._prepare_start(start)
+
         self.horizontal_flip = horizontal_flip
         self.rotate = rotate
         self.crop = crop
         self.scale = scale
 
     def _prepare_start(self, start):
+        '''
+        Skips the footage as per requested
+        '''
         if isinstance(start, int):
             self.start_frame = start
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, start)
         else:
-            self.start_msec = start
+            self.cap.set(cv2.CAP_PROP_POS_MSEC, start)
+
+    @staticmethod
+    def addAuthIntoRtsp(user, pwd, url):
+        params = url.split('/')[1:]
+        params = list(filter(lambda x: bool(x), params))
+        url_front = 'rtsp://{user}:{pwd}@{ip_port}'.format(user=user, pwd=pwd, ip_port=params[0])
+        params[0] = url_front
+        url = '/'.join(params)
+        return url
+
+    def _initialiseVideoCap(self, source, max_tries=3):
+        if isinstance(source, str):
+            if source == 'screen':
+                return None
+            
+            # If it is rtsp
+            if source[:5].lower() == 'rtsp:':
+                tries = 0
+
+
+                while tries <= max_tries:
+                    username = input("Username: ")
+                    pwd = getpass.getpass("Password: ")
+                    rtsp_url = self.addAuthIntoRtsp(username, pwd, source)
+                    cap = cv2.VideoCapture(rtsp_url)
+                    if cap.isOpened():
+                        return cap
+
+                raise Exception("Invalid RTSP URL/ Authentication")
+        
+        cap = cv2.VideoCapture(source)
+        if not cap.isOpened():
+            raise Exception("Invalid Stream input")
+        return cap
 
     def get_fps(self):
         '''
@@ -83,10 +124,7 @@ class ProcessedStream(torch.utils.data.IterableDataset):
         '''
         if self.source == 'screen':
             return None
-        cap = cv2.VideoCapture(self.source)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()
-        return fps
+        return self.cap.get(cv2.CAP_PROP_FPS)
 
     # pylint: disable=unsubscriptable-object
     def preprocessing(self, image):
@@ -130,12 +168,6 @@ class ProcessedStream(torch.utils.data.IterableDataset):
             capture = 'screen'
             if mss is None:
                 print('!!!!!!!!!!! install mss (pip install mss) for faster screen grabs')
-        else:
-            capture = cv2.VideoCapture(self.source)
-            if self.start_frame:
-                capture.set(cv2.CAP_PROP_POS_FRAMES, self.start_frame)
-            if self.start_msec:
-                capture.set(cv2.CAP_PROP_POS_MSEC, self.start_msec)
 
         frame_start = 0 if not self.start_frame else self.start_frame
         frame_i = frame_start
@@ -145,18 +177,17 @@ class ProcessedStream(torch.utils.data.IterableDataset):
                 LOG.info('reached max frames %d', self.max_frames)
                 break
 
-            if capture == 'screen':
+            if self.cap:
+                _, image = self.cap.read()
+                if image is not None:
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            else:
                 if mss is None:
                     image = np.asarray(PIL.ImageGrab.grab().convert('RGB'))
                 else:
                     with mss.mss() as sct:
                         monitor = sct.monitors[1]
                         image = np.asarray(sct.grab(monitor))[:, :, 2::-1]
-            else:
-                _, image = capture.read()
-                if image is not None:
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
             if image is None:
                 LOG.info('no more images captured')
                 break

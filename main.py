@@ -9,6 +9,7 @@ import time
 from statistics import mode
 from scipy import stats
 import numpy as np
+import argparse
 
 import cv2
 import torch
@@ -38,11 +39,31 @@ from utils import annotation, mutils
 #     progress=True
 # )
 
+def cli():
+    parser = argparse.ArgumentParser(description='Run Detection on video/ live stream')
+    parser.add_argument('model', type=str, \
+        help='Path to model to be used for detection (Get help if you dont understand retquired formats)')
+    parser.add_argument('source', type=str, default='0', \
+        help='Source of video, can be an integer for direct feed or path to video')
+    parser.add_argument('--rtsp', type=str, default='',\
+        help='{ip_address:port} of rtsp feed (Requires authentication details)')
+    args = parser.parse_args()
+    return args
+
 HARDEST_VIDEO = '/home/hosea/Infinergy/videos/sieved/busy/busy.mp4'
 VIDEO = '/home/hosea/Infinergy/videos/sieved/09.12.13-09.12.41[M][0@0][0].mp4'
+HOME = '/mnt/data1/private/Home/11.05.00-11.10.00[R][0@0][0].mp4'
 
 downloaded_ckpt = 'models/pifpaf/shufflenetv2k16-210404-110105-cocokp-o10s-f90ed364.pkl'
-model, processor = mutils.get_model(downloaded_ckpt)
+
+def main():
+    args = cli()
+
+    source = args.rtsp if args.rtsp else args.source
+
+    model, processor = mutils.get_model(args.model)
+    master = Master(model, processor, ModeCounter, source)
+    master.start_detection()
 
 # print(checkpoint)
 # print(type (checkpoint))
@@ -51,6 +72,5 @@ model, processor = mutils.get_model(downloaded_ckpt)
 # for key in checkpoint.keys():
 #     print(key)
 
-master = Master(model, processor, ModeCounter, VIDEO)
-
-master.start_detection()
+if __name__ == '__main__':
+    main()

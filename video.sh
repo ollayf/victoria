@@ -1,0 +1,1 @@
+python main.py 'models/pifpaf/shufflenetv2k16-210404-110105-cocokp-o10s-f90ed364.pkl' 0 --rtsp rtsp://192.168.2.50:554
